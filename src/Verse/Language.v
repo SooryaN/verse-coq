@@ -146,6 +146,9 @@ program block is merely a list of instructions.
 *)
   Inductive instruction : Type :=
   | assign : assignment -> instruction
+  | storeIn    : forall b e ty, forall x : v memory (array b e ty), Indices b e ty x  -> v direct ty -> instruction
+  | moveTo     : forall b e ty,  forall x : v memory (array b e ty), Indices b e ty x  -> v direct ty -> instruction
+  | loadFrom   : forall b e ty, forall x : v memory (array b e ty),  Indices b e ty x -> v direct ty -> instruction
   .
 
   Definition block := list instruction.
@@ -194,6 +197,11 @@ Arguments assign2 [v ty] _ _ _ .
 Arguments update2 [v ty] _ _ _ .
 Arguments update1 [v ty] _ _ .
 Arguments assign [v] _ .
+Arguments storeIn  [v b e ty] _ _ _.
+Arguments moveTo   [v b e ty] _ _ _.
+Arguments loadFrom [v b e ty] _ _ _.
+
+
 
 (* end hide *)
 
@@ -262,6 +270,9 @@ Notation "A ::=>> N "    := (assign (update1 (shiftR N) (toArg A))) (at level 70
 Notation "A ::=<*< N "    := (assign (update1 (rotL N) (toArg A))) (at level 70).
 Notation "A ::=>*> N "    := (assign (update1 (rotR N) (toArg A))) (at level 70).
 
+Notation "'STORE' B 'IN'   A [- N -]"       := (storeIn A (exist _ (N%nat) _) B) (at level 200, A ident).
+Notation "'MOVE'  B 'TO'   A [- N -]"       := (moveTo A (exist _ (N%nat) _) B) (at level 200, A ident).
+Notation "'LOAD'  B 'FROM' A [- N -]" := (loadFrom A (exist _ (N%nat) _) B) (at level 200, A ident).
 
 (**
 
@@ -315,7 +326,10 @@ Definition prog : block MyVar.
          X ::=>> 5;
          X ::= X [+] (A[- 2 -]);
          X ::= X [+] Ox "55";
-         Z ::= Z [+] vec_const
+         Z ::= Z [+] vec_const;
+         LOAD  X FROM A [- 10 -];
+         STORE X IN A [- 41 -];
+         MOVE  X TO A [- 10 -]
        ]%list.
 Defined.
 
@@ -389,7 +403,12 @@ Section PrettyPrintingInstruction.
     end.
 
   Local Definition mkUpdate {a : arity}(o : op a) (x y   : Doc) := x <_> opDoc o <> EQUALS <_> y.
-
+  Local Definition convertEndian e d :=
+    match e with
+    | bigE => text "bigEndian" <> paren d
+    | littleE => text "littleEndian" <> paren d
+    | _       => d
+    end.
   (** The pretty printing of assignment statements **)
   Global Instance assignment_pretty_print : PrettyPrint (assignment v)
     := { doc := fun assgn =>  match assgn with
@@ -410,9 +429,15 @@ Section PrettyPrintingInstruction.
                               end
        }.
 
+
   Global Instance instruction_pretty_print : PrettyPrint (instruction v)
     := { doc := fun i => match i with
                          | assign a => doc a
+                         | @storeIn _ _ e _ a (exist _ i _) b
+                         | @moveTo _ _ e _  a (exist _ i _) b
+                           => doc a <_> bracket (doc i) <_> EQUALS <_> convertEndian e (doc b)
+                         | @loadFrom _ _ e _ a (exist _ i _) b
+                           => doc b <_> EQUALS <_> convertEndian e (doc a <_> bracket (doc i))
                          end
        }.
 
