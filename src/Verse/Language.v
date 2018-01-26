@@ -318,6 +318,16 @@ Arguments foreach [v b] _ _.
 
 (* end hide *)
 
+(** *** Array mirroring
+
+We have an array of [n] elements each of which is used in a tight loop
+where the data is accessed often. It makes sense to mirror the data in
+this array into registers so that the access is faster. However,
+storing in different registers will make its use difficult with helper
+functions like [foreach]
+
+*)
+
 (** * Notation and Pretty printing.
 
 
@@ -489,6 +499,16 @@ Section PrettyPrintingInstruction.
 End PrettyPrintingInstruction.
 
 (* end hide *)
+
+
+
+
+
+
+
+
+
+
 
 
 (** *** Illustrative example of the notation.
