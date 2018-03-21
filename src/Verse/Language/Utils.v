@@ -45,7 +45,6 @@ instead of [indices].
 
 
   Variable v : VariableT.
-  Variable a : align.
   Variable b : nat.
   Variable e : endian.
   Variable ty : type direct.
@@ -73,12 +72,12 @@ instead of [indices].
      1]. Mostly used in conjunction with [foreach]
 
    *)
-  Definition indices (arr : v memory (array a b e ty)) :  list (Indices arr)
+  Definition indices (arr : v memory (array b e ty)) :  list (Indices arr)
     := loopover b.
 
   (** This function is similar to indices but gives the indices in the
       reverse order.  *)
-  Definition indices_reversed (arr : v memory (array a b e ty)) := List.rev (indices arr).
+  Definition indices_reversed (arr : v memory (array b e ty)) := List.rev (indices arr).
 
 
   (**
@@ -136,7 +135,7 @@ of variable indexing can be used even without array caching.
 
 
   (** This macro loads the array to the corresponding chached variables *)
-  Definition loadCache (arr : v memory (array a b e ty)) (ch : VarIndex) : code v :=
+  Definition loadCache (arr : v memory (array b e ty)) (ch : VarIndex) : code v :=
     foreach (indices arr)
             (fun i pf => let ix := exist _ i pf in
                       let arrI := index arr ix in
@@ -159,7 +158,7 @@ of variable indexing can be used even without array caching.
          efficient to just move those explicitly.
 
    *)
-  Definition moveBackCache (arr : v memory (array a b e ty)) (ch : VarIndex)  : code v :=
+  Definition moveBackCache (arr : v memory (array b e ty)) (ch : VarIndex)  : code v :=
     foreach (indices arr)
             (fun i pf => let ix := exist _ i pf in
                       [ moveTo arr ix (ch i pf) ]).
@@ -169,7 +168,7 @@ of variable indexing can be used even without array caching.
       preserves the values in the cache variables. The cached
       variables can then be reused in the rest of the program.
    *)
-  Definition backupCache  (arr : v memory (array a b e ty)) (ch : VarIndex) : code v :=
+  Definition backupCache  (arr : v memory (array  b e ty)) (ch : VarIndex) : code v :=
     foreach (indices arr)
             (fun i pf => let ix := exist _ i pf in
                       let arrI := index arr ix in
@@ -183,10 +182,10 @@ End ArrayUtils.
 
 (* begin hide *)
 Arguments varIndex [v b ty] _ _ _.
-Arguments loadCache [v a b e ty] _ _.
-Arguments moveBackCache [v a b e ty] _ _.
-Arguments backupCache [v a b e ty] _ _.
-Arguments indices [v a b e ty] _.
+Arguments loadCache [v b e ty] _ _.
+Arguments moveBackCache [v b e ty] _ _.
+Arguments backupCache [v b e ty] _ _.
+Arguments indices [v b e ty] _.
 Arguments foreach [v b] _ _.
 
 (* end hide *)
